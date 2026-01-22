@@ -17,6 +17,6 @@ app.use(express.urlencoded({extended:true,limit:"16kb"}))
 app.use(express.static)
 app.use(cookieParser())
 
-console.log(app);
+// console.log(app);
 
 export default app;
