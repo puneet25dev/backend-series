@@ -4,7 +4,27 @@ import {User} from "../models/user.model.js";
 import uploadOnCLoudinary from "../utils/fileupload.js";
 import ApiResponse from "../utils/ApiResponse.js";
 
+
+const generateAccessAndRefreshTokens=async(userId)=>{
+  try {
+    const user=await User.findById(userId)
+    const accessToken=user.generateAccessToken()
+    const refreshToken=user.generateRefreshToken()
+
+    user.refreshToken=refreshToken
+    await user.save({validateBeforeSave:false})
+
+    return {accessToken,refreshToken}
+    
+  } catch (error) {
+    throw new ApiError(500,"Something wrong while generating refresh and access token")
+  }
+}
 const regUser = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    message:"Ok"
+  })
+
   //get user details from frontend
   // validation-
   // check if user already exists
@@ -72,5 +92,29 @@ const regUser = asyncHandler(async (req, res) => {
         new ApiResponse(200,createdUser,"User registerd succesfully")
     )
 });
+
+
+const loginUser= asyncHandler(async (req,res)=>{
+
+  const{email,username,password}=req.body
+
+  if(!username || !email){
+    throw new ApiError(400,"username or password required")
+  }
+
+  User.findOne({
+    $or:[{username},{email}]
+  })
+
+  if(!user){
+    throw new ApiError(404,"User does not exists")
+  }
+
+  const isPasswordValid=  await user.isPasswordCorrect(password)
+   if(!isPasswordValid){
+    throw new ApiError(401,"User invalid")
+  }
+  const {accessToken,refreshToken}=await generateAccessAndRefreshTokens(user._id)
+})
 
 export default regUser;
